@@ -8,13 +8,12 @@ class Fan {
         Fan(uint16_t pin);
         void begin();
         void loop();
+        /**
+         * Set the fan speed from 0% (stopped) to 100% (max).
+         */
+        void setSpeed(int load);
     private:
-      uint16_t _pin;
-      
-      /**
-       * Set the fan speed from 0% (stopped) to 100% (max).
-       */
-      void setSpeed(int load);
+        uint16_t _pin;
 };
 
 extern Fan fan;
