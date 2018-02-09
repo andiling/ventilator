@@ -22,10 +22,11 @@ class Fan {
         uint16_t _rpmPin;
         int _targetRPM;
         int _currentLoad;
-        volatile unsigned long _lastCellSwitch;
-        // Keeps the last 6 second RPMs in [1] and the currently counting RPMs in [0]
-        volatile int _currentRPM[2];
+        volatile unsigned long _lastRPMCountEvent;
+        volatile int _interruptCounter;
+        volatile int _currentRPM;
 
+        void checkRPMCounterInterval();
 };
 
 extern Fan fan;

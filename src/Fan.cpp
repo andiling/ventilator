@@ -9,10 +9,10 @@ Fan::Fan(uint16_t fanPin, uint16_t rpmPin) {
     this->_rpmPin = rpmPin;
     this->_targetRPM = 0;
     this->_currentLoad = 0;
-    for (int i = 0; i < sizeof(this->_currentRPM) / sizeof(this->_currentRPM[0]); i++) {
-        this->_currentRPM[i] = 0;
-    }
-    this->_lastCellSwitch = 0;
+    this->_interruptCounter = 0;
+    this->_currentRPM = 0;
+    this->_lastRPMCountEvent = 0;
+    attachInterrupt(this->_rpmPin, handler, FALLING);
 }
 
 void Fan::begin() {
@@ -23,6 +23,7 @@ void Fan::begin() {
 void Fan::loop() {
     int target = map(this->_currentLoad, 0, 100, 0, 1023);
     analogWrite(this->_fanPin, target);
+    checkRPMCounterInterval();
 }
 
 void Fan::setSpeed(int load) {
@@ -30,28 +31,27 @@ void Fan::setSpeed(int load) {
     // 15 = 615rpm   -> mid
     // 8 = 305rpm    -> low
     this->_currentLoad = load;
+    // Spin up the fan. If the load goes from 0 to 8 the fan is not spinning up.
+    analogWrite(this->_fanPin, 1023);
+    delay(500);
+}
 
-    if (load > 1) {
-        this->_lastCellSwitch = millis();
-        this->_currentRPM[0] = 0;
-        attachInterrupt(this->_rpmPin, handler, FALLING);
-    } else {
-        detachInterrupt(this->_rpmPin);
-        this->_currentRPM[1];
+void Fan::checkRPMCounterInterval() {
+    if (this->_lastRPMCountEvent + RPM_COUNTER_INTERVAL <= millis()) {
+        // We have 2 interrupts per rotation, so the formula is (interrupts / 2) * 60 000 / interval.
+        this->_currentRPM = this->_interruptCounter * 30000 / RPM_COUNTER_INTERVAL;
+        this->_interruptCounter = 0;
+        this->_lastRPMCountEvent = millis();
     }
 }
 
 void Fan::IRQCounter() {
-    this->_currentRPM[0] += 1;
-    if (this->_lastCellSwitch + RPM_COUNTER_INTERVAL <= millis()) {
-        this->_currentRPM[1] = this->_currentRPM[0];
-        this->_currentRPM[0] = 0;
-        this->_lastCellSwitch = millis();
-    }
+    this->_interruptCounter += 1;
+    checkRPMCounterInterval();
 }
 
 int Fan::getRPM() {
-    return this->_currentRPM[1] * 30000 / RPM_COUNTER_INTERVAL;
+    return this->_currentRPM;
 }
 
 Fan fan = Fan(FAN_PIN, FAN_RPM_PIN);
