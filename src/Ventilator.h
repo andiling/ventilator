@@ -16,5 +16,6 @@
 #define HOSTNAME "br-sp-ventilator"
 
 #define FAN_PIN D2
+#define FAN_RPM_PIN D1
 
 #endif

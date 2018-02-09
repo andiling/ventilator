@@ -6,6 +6,7 @@ WebServer::WebServer(int port) {
     _server->on("/", std::bind(&WebServer::handle_root, this));
     _server->on("/set", std::bind(&WebServer::handle_setLoad, this));
     _server->on("/reset", std::bind(&WebServer::handle_reset, this));
+    _server->on("/rpm", std::bind(&WebServer::handle_getRPM, this));
 
     _httpUpdater = new ESP8266HTTPUpdateServer(true);
     _httpUpdater->setup(_server);
@@ -57,6 +58,16 @@ void WebServer::handle_setLoad() {
     int loadInt = atoi(load.c_str());
     fan.setSpeed(loadInt);
     _server->send(200);
+}
+
+void WebServer::handle_getRPM() {
+    int rpm = fan.getRPM();
+
+    char response[16];
+    response[0]=0;
+    sprintf(response,"{\"rpm\": %d}", rpm);
+
+    _server->send(200, "application/json", response);
 }
 
 WebServer webServer = WebServer(HTTP_PORT);
